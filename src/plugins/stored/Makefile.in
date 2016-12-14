@@ -20,7 +20,7 @@ thisdir = src/plugins/stored
 
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/stored
 
-BUILD_PLUGINS = @BUILD_SD_PLUGINS@
+BUILD_PLUGINS = @BUILD_SD_PLUGINS@ dedup-sd.la
 
 .SUFFIXES:    .c .lo
 
@@ -41,6 +41,23 @@ autoxflate-sd.la: Makefile \
 		  autoxflate-sd$(DEFAULT_OBJECT_TYPE) \
 		  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared autoxflate-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version -L../../lib -lbareos
+
+blake2b-ref.lo: deduplib/blake2/blake2b-ref.c
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES) $(COMPRESS_CPPFLAGS) -c $<
+
+rabin_polynomial.lo: deduplib/rabin-fingerprint/rabin_polynomial.c
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES) $(COMPRESS_CPPFLAGS) -c $<
+
+dedup-sd.lo: dedup-sd.c
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES) $(COMPRESS_CPPFLAGS) -c $<
+
+dedup-sd.la: Makefile \
+		  blake2b-ref$(DEFAULT_OBJECT_TYPE) \
+		  rabin_polynomial$(DEFAULT_OBJECT_TYPE) \
+		  dedup-sd$(DEFAULT_OBJECT_TYPE) \
+		  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared blake2b-ref.lo rabin_polynomial.lo dedup-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version -L../../lib -lbareos -lsqlite3
+
 
 example-plugin-sd.la: Makefile example-plugin-sd$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared example-plugin-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
